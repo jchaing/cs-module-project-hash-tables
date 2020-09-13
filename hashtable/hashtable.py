@@ -9,6 +9,80 @@ class HashTableEntry:
         self.next = None
 
 
+# LinkedList only used as reference
+class LinkedList:
+    def __init__(self):
+        self.head = None
+
+    def __str__(self):
+        """Print entire LL"""
+
+        if self.head is None:
+            return "[Empty List]"
+
+        cur = self.head
+        s = ""
+
+        while cur is not None:
+            s += f"({cur.value})"
+
+            if cur.next is not None:
+                s += "-->"
+
+            cur = cur.next
+
+        return s
+
+    def find(self, value):
+        cur = self.head
+
+        while cur is not None:
+            if cur.value == value:
+                return cur
+
+            cur = cur.next
+
+        return None
+
+    def delete(self, value):
+        cur = self.head
+
+        # Special case of deleting head
+        if cur.value == value:
+            self.head = cur.next
+            return cur
+
+        # General case of deleting internal Node
+
+        prev = cur
+        cur = cur.next
+
+        while cur is not None:
+            if cur.value == value:  # Found it!
+                prev.next = cur.next  # Cut it out
+                return cur  # Return deleted node
+            else:
+                prev = cur
+                cur = cur.next
+
+        return None  # If we got here, nothing found
+
+    def insert_at_head(self, node):
+        node.next = self.head
+        self.head = node
+
+    def insert_or_overwrite_value(self, value):
+        node = self.find(value)
+
+        if node is None:
+            # Make a new node
+            self.insert_at_head(HashTableEntry(value))
+
+        else:
+            # Overwrite old value
+            node.value = value
+
+
 # Hash table can't have fewer than this many slots
 MIN_CAPACITY = 8
 
@@ -26,7 +100,9 @@ class HashTable:
         if capacity < MIN_CAPACITY:
             self.capacity = MIN_CAPACITY
         else:
-            self.capacity = [None] * capacity
+            self.capacity = capacity
+
+        self.buckets = [None] * capacity
 
     def get_num_slots(self):
         """
@@ -39,7 +115,7 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        return len(self.capacity)
+        return len(self.buckets)
 
     def get_load_factor(self):
         """
@@ -77,7 +153,7 @@ class HashTable:
         between within the storage capacity of the hash table.
         """
         # return self.fnv1(key) % self.capacity
-        return self.djb2(key) % len(self.capacity)
+        return self.djb2(key) % len(self.buckets)
 
     def put(self, key, value):
         """
@@ -88,10 +164,33 @@ class HashTable:
         Implement this.
         """
         # Your code here
+        # 1. Hash the key
+        # 2. Take the hash and mod it with len of array
         idx = self.hash_index(key)
-        if self.capacity[idx] is not None:
-            print('WARNING! you are overwriting a value')
-        self.capacity[idx] = value
+
+        # 3. Check if there's a value at that index
+        if self.buckets[idx] is not None:
+            # Check if the key is already in our LL
+            node = self.buckets[idx]  # this is the head
+
+            while node is not None:
+                if node.key == key:
+                    # If so, overwrite that value
+                    node.value = value
+                    return
+
+                node = node.next
+
+            # Add a node to the head of the linked list
+            old_head = self.buckets[idx]
+            new_head = HashTableEntry(key, value)
+            new_head.next = old_head
+            self.buckets[idx] = new_head
+
+        # 3a. Go to index and put in value
+        else:
+            # Add the first node
+            self.buckets[idx] = HashTableEntry(key, value)
 
     def delete(self, key):
         """
@@ -102,7 +201,30 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        self.capacity[self.hash_index(key)] = None
+        idx = self.hash_index(key)
+
+        node = self.buckets[idx]
+
+        # Special case of deleting head; see if head matches
+        if node.key == key:
+            self.buckets[idx] = node.next
+            return node
+
+        # General cse of deleting internal node
+        prev_node = node
+        node = node.next
+
+        while node is not None:
+            if node.key == key:  # Found it!
+                prev_node.next = node.next  # Cut it out!
+                return node  # Return deleted node
+            else:
+                prev_node = node
+                node = node.next
+
+        return None  # If we got here, nothing found
+
+        # self.buckets[idx] = None
 
     def get(self, key):
         """
@@ -113,7 +235,21 @@ class HashTable:
         Implement this.
         """
         # Your code here
-        return self.capacity[self.hash_index(key)]
+
+        # 1. Hash the key
+        # 2. Take the hash and mod it with the len of array
+        idx = self.hash_index(key)
+        # 3. Go to index and traverse our LL
+        node = self.buckets[idx]
+
+        while node is not None:
+            if node.key == key:
+                return node.value
+
+            # loop through the LL
+            node = node.next
+
+        return None
 
     def resize(self, new_capacity):
         """
@@ -174,4 +310,5 @@ print(ht2.get("Toyota"))
 print(ht2.get("Porsche"))
 ht2.delete("Porsche")
 ht2.delete("Honda")
-print(ht2.capacity)
+print(ht2.get("Toyota"))
+print(ht2.buckets)
