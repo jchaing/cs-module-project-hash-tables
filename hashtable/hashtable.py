@@ -243,10 +243,10 @@ class HashTable:
         node = self.buckets[idx]
 
         while node is not None:
-            if node.key == key:
-                return node.value
+            if node.key == key:  # key was found
+                return node.value  # return its value
 
-            # loop through the LL
+            # cycle to next node
             node = node.next
 
         return None
@@ -259,6 +259,23 @@ class HashTable:
         Implement this.
         """
         # Your code here
+
+        # Store old list
+        old_buckets = self.buckets
+
+        # Update capacity
+        self.capacity = new_capacity
+
+        # Create new list with new capacity
+        self.buckets = [None] * new_capacity
+
+        # loop through old list
+        for node in old_buckets:
+            while node is not None:
+                # insert node into new list
+                self.put(node.key, node.value)
+                # cycle to next node
+                node = node.next
 
 
 if __name__ == "__main__":
